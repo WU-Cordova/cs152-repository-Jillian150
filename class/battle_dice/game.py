@@ -8,6 +8,8 @@ class Game:
             player1 (Character): The first player.
             player2 (Character): The second player.
         """
+        self.__player1 = player1
+        self.__player2 = player2
         pass
 
     def attack(self, attacker: Character, defender: Character) -> None:
@@ -20,6 +22,15 @@ class Game:
             attacker (Character): The attacker.
             defender (Character): The defender. 
         """
+        random_roll = random.randint(1,6)
+        attack_power = random_roll * attacker.attack_power
+        new_health = defender.health - attack_power
+        if new_health <= 0:
+            print("defender defeated")
+        else:
+            pass
+
+
 
     def start_battle(self) -> None:
         """ Starts the battle between the two players. Algorithm: 
@@ -30,3 +41,5 @@ class Game:
                 1.4. If Player 1 is defeated, break the loop.
             2. Print the result of the battle.
         """
+
+        pass
