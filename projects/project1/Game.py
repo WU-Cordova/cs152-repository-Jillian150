@@ -1,5 +1,5 @@
 from projects.project1.MultiDeck import MultiDeck
-from projects.project1.Card import Card
+from projects.project1.Card import Card, CardFace
 
 class Game:
     def __init__(self):
