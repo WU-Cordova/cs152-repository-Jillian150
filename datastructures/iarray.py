@@ -23,6 +23,18 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __init__(self, starting_sequence: Sequence[T], data_type: type=object) -> None:
+        from typing import Sequence, TypeVar, Generic
+    class Array(Generic[T]):
+        def __init__(self, starting_sequence: Sequence[T], data_type: type=object) -> None:
+            self.data_type = data_type
+            self.logical_size = len(starting_sequence)
+            self.physical_size = self.logical_size
+            self.items = np.array(starting_sequence, dtype=self.data_type)
+    
+        def __repr__(self) -> str:
+            return (f"Array(logical size: {self.logical_size}, items: {self.items.tolist()}, "
+                    f"physical size: {self.physical_size}, data type: {self.data_type})")
+
         """ Array Constructor. Initializes the Array with a default capacity (default: 0) and default value (default: None).
             The Array should manage a physical size (the size of the internal numpy array) and a logical size (the number of items in the Array).
 
@@ -56,6 +68,17 @@ class IArray(Sequence[T], Generic[T], ABC):
     def __getitem__(self, index: slice) -> Sequence[T]: ...
     @abstractmethod
     def __getitem__(self, index: int | slice) -> T | Sequence[T]:
+        if isinstance(index, int):
+            if index < 0:
+                index += self.logical_size
+            if index >= self.logical_size or index < 0:
+                raise IndexError("Index out of bounds")
+            return self.items[index]
+        elif isinstance(index, slice):
+            return self.items[index].tolist()
+        else:
+            raise TypeError("Index must be an integer or slice")
+    
         """ Bracket operator for getting an item (via int) or items (via slice) in an Array. If index is an integer,
             return the item at the index. If index is a slice, return the items at the slice. Supports wrap-around
             indexing via negative indixes.
@@ -86,6 +109,13 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __setitem__(self, index: int, item: T) -> None:
+        if index < 0:
+            index += self.logical_size
+        if index >= self.logical_size or index < 0:
+            raise IndexError("Index out of bounds")
+        if not isinstance(item, self.data_type):
+            raise TypeError(f"Item must be of type {self.data_type}")
+        self.items[index] = item
         """ Bracket operator for setting an item in an Array.
 
         Examples:
@@ -111,6 +141,13 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def append(self, data: T) -> None:
+        if self.logical_size == self.physical_size:
+            self.physical_size *= 2
+            new_items = np.empty(self.physical_size, dtype=self.data_type)
+            new_items[:self.logical_size] = self.items
+            self.items = new_items
+        self.items[self.logical_size] = data
+        self.logical_size += 1
         """ Append an item to the end of the Array. Internally, the Array should manage a physical size (the size of the internal numpy array) 
             and a logical size (the number of items in the Array). The algorithm should double the array physical size when the number of items in the array (logical size) 
             is equal to the physical size.
@@ -142,6 +179,15 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def append_front(self, data: T) -> None:
+        if self.logical_size == self.physical_size:
+            self.physical_size *= 2
+            new_items = np.empty(self.physical_size, dtype=self.data_type)
+            new_items[1:self.logical_size + 1] = self.items[:self.logical_size]
+            self.items = new_items
+        else:
+            self.items[1:self.logical_size + 1] = self.items[:self.logical_size]
+        self.items[0] = data
+        self.logical_size += 1
         """ Append an item to the front of the Array. Internally, the Array should manage a physical size (the size of the internal numpy array) 
         and a logical size (the number of items in the Array). The algorithm should double the array physical size when the number of items in the array (logical size) 
         is equal to the physical size. 
@@ -173,6 +219,14 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def pop(self) -> None:
+        if self.logical_size == 0:
+            raise IndexError("pop from empty array")
+        self.logical_size -= 1
+        if self.logical_size <= self.physical_size // 4:
+            self.physical_size //= 2
+            new_items = np.empty(self.physical_size, dtype=self.data_type)
+            new_items[:self.logical_size] = self.items[:self.logical_size]
+            self.items = new_items
         """ 
         Pop an item from the end of the Array. Internally, the Array should manage a physical size (the size of the internal numpy array)
             and a logical size (the number of items in the Array). The algorithm should shrink the array physical size by half when the logical size is less than or equal to 1/4 of the physical size.
@@ -201,6 +255,15 @@ class IArray(Sequence[T], Generic[T], ABC):
     
     @abstractmethod
     def pop_front(self) -> None:
+        if self.logical_size == 0:
+            raise IndexError("pop from empty array")
+        self.items = self.items[1:]
+        self.logical_size -= 1
+        if self.logical_size <= self.physical_size // 4:
+            self.physical_size //= 2
+            new_items = np.empty(self.physical_size, dtype=self.data_type)
+            new_items[:self.logical_size] = self.items[:self.logical_size]
+            self.items = new_items
         """ 
         Pop an item from the front of the Array. Internally, the Array should manage a physical size (the size of the internal numpy array)
         and a logical size (the number of items in the Array). The algorithm should shrink the array physical size by half when the logical size is less than or equal to 1/4 of the physical size.
@@ -231,6 +294,7 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __len__(self) -> int:
+        return self.logical_size
         """ Length operator for getting the logical length (size) of the Array (number of items in the Array).
 
         Examples:
@@ -245,6 +309,11 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Array):
+            return False
+        return (self.logical_size == other.logical_size and
+                np.array_equal(self.items[:self.logical_size], other.items[:other.logical_size]))
+    
         """ Equality operator == to check if two Arrays are equal (deep check).
 
         Examples:
@@ -266,6 +335,8 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __iter__(self) -> Iterator[T]:
+        for i in range(self.logical_size):
+            yield self.items[i]
         """ Iterator operator. Allows for iteration over the Array.
         Examples:
             >>> array = Array[str](starting_sequence=['one', 'two', 'three', 'four', 'five'], data_type=str)
@@ -280,6 +351,8 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __reversed__(self) -> Iterator[T]:
+        for i in range(self.logical_size - 1, -1, -1):
+            yield self.items[i]
         """ Reversed iterator operator. Allows for iteration over the Array in reverse.
         Examples:
             >>> array = Array[str](starting_sequence=['one', 'two', 'three', 'four', 'five'], data_type=str)
@@ -294,6 +367,17 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __delitem__(self, index: int) -> None:
+        if index < 0:
+            index += self.logical_size
+        if index >= self.logical_size or index < 0:
+            raise IndexError("Index out of bounds")
+        self.items[index:self.logical_size - 1] = self.items[index + 1:self.logical_size]
+        self.logical_size -= 1
+        if self.logical_size <= self.physical_size // 4:
+            self.physical_size //= 2
+            new_items = np.empty(self.physical_size, dtype=self.data_type)
+            new_items[:self.logical_size] = self.items[:self.logical_size]
+            self.items = new_items
         """ Delete an item in the array. Copies the array contents from index + 1 down
             to fill the gap caused by deleting the item and shrinks the array size down by one.
             The algorithm should shrink the array physical size when the number of items in the array (logical size) is less than or 
@@ -317,6 +401,10 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __contains__(self, item: Any) -> bool:
+        for i in range(self.logical_size):
+            if self.items[i] == item:
+                return True
+        return False
         """ Contains operator (in). Checks if the array contains the item.
 
         Examples:
@@ -336,6 +424,8 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def clear(self) -> None:
+        self.logical_size = 0
+        self.items = np.empty(self.physical_size, dtype=self.data_type)
         """ Clear the Array
         
         Examples:
@@ -353,6 +443,7 @@ class IArray(Sequence[T], Generic[T], ABC):
 
     @abstractmethod
     def __str__(self) -> str:
+        return str(self.starting_sequence)
         """ Return a string representation of the data and structure. 
 
         Examples:
@@ -370,6 +461,10 @@ class IArray(Sequence[T], Generic[T], ABC):
     
     @abstractmethod
     def __repr__(self) -> str:
+        logical_size = len(self.starting_sequence)
+        physical_size = len(self.starting_sequence)  # Assuming physical size is the same for simplicity
+        data_type = self.data_type
+        return f"Array(logical size: {logical_size}, items: {self.starting_sequence}, physical size: {physical_size}, data type: {data_type})"
         """ Return a programmer's representation of the data and structure.
         
         Examples:
