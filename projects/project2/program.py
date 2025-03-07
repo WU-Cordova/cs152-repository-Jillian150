@@ -1,5 +1,5 @@
 import random
-from array2d import Array2D  # Assuming your Array2D implementation is in a file named array2d.py
+from array2d import Array2D 
 import copy
 import time
 import os
