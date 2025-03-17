@@ -9,7 +9,7 @@ class Bag(IBag[T]):
             if item is not None:
                 self.bag_dict.update(item)
 
-    def add(self, item: T) -> None:
+    def  add(self, item: T) -> None:
         self.bag_dict[item] += 1
 
     def remove(self, item: T) -> None:
