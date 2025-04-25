@@ -6,7 +6,7 @@ T = TypeVar("T")
 class Deque(Generic[T]):
     def __init__(self) -> None:
         """Initializes an empty deque using LinkedList."""
-        self._list = LinkedList[T]()
+        self._list = LinkedList[T]()  # Removed `data_type`
 
     def append(self, item: T) -> None:
         """Adds an item to the back of the deque."""
