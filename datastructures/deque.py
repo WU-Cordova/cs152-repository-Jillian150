@@ -1,4 +1,5 @@
 from typing import TypeVar, Generic
+from datastructures.linkedlist import LinkedList
 
 T = TypeVar("T")
 
@@ -17,21 +18,34 @@ class Deque(Generic[T]):
 
     def pop(self) -> T:
         """Removes and returns the last item in the deque."""
+        if self.empty:
+            raise IndexError("Pop from an empty deque")
         return self._list.pop()
 
     def pop_left(self) -> T:
         """Removes and returns the first item in the deque."""
+        if self.empty:
+            raise IndexError("Pop from an empty deque")
         return self._list.pop_front()
 
     @property
     def front(self) -> T:
         """Returns the first item in the deque."""
+        if self.empty:
+            raise IndexError("Front from an empty deque")
         return self._list.front
 
     @property
     def back(self) -> T:
         """Returns the last item in the deque."""
+        if self.empty:
+            raise IndexError("Back from an empty deque")
         return self._list.back
+
+    @property
+    def empty(self) -> bool:
+        """Checks if the deque is empty."""
+        return self._list.empty
 
     def __len__(self) -> int:
         """Returns the number of items in the deque."""
