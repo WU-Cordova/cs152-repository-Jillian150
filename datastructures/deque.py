@@ -4,9 +4,9 @@ from datastructures.linkedlist import LinkedList
 T = TypeVar("T")
 
 class Deque(Generic[T]):
-    def __init__(self) -> None:
+    def __init__(self, data_type: type = object) -> None:
         """Initializes an empty deque using LinkedList."""
-        self._list = LinkedList[T]()  # Removed `data_type`
+        self._list = LinkedList[T](data_type)  # Now accepts `data_type` properly
 
     def append(self, item: T) -> None:
         """Adds an item to the back of the deque."""
