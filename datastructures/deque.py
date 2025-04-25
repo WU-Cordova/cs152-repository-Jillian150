@@ -6,27 +6,27 @@ T = TypeVar("T")
 class Deque(Generic[T]):
     def __init__(self, data_type: type = object) -> None:
         """Initializes an empty deque using LinkedList."""
-        self._list = LinkedList[T](data_type)  # Now accepts `data_type` properly
+        self._list = LinkedList[T](data_type)
 
-    def append(self, item: T) -> None:
+    def enqueue(self, item: T) -> None:
         """Adds an item to the back of the deque."""
         self._list.append(item)
 
-    def append_left(self, item: T) -> None:
+    def enqueue_front(self, item: T) -> None:
         """Adds an item to the front of the deque."""
         self._list.prepend(item)
 
-    def pop(self) -> T:
-        """Removes and returns the last item in the deque."""
-        if self.empty:
-            raise IndexError("Pop from an empty deque")
-        return self._list.pop()
-
-    def pop_left(self) -> T:
+    def dequeue(self) -> T:
         """Removes and returns the first item in the deque."""
         if self.empty:
-            raise IndexError("Pop from an empty deque")
+            raise IndexError("Dequeue from an empty deque")
         return self._list.pop_front()
+
+    def dequeue_back(self) -> T:
+        """Removes and returns the last item in the deque."""
+        if self.empty:
+            raise IndexError("Dequeue from an empty deque")
+        return self._list.pop()
 
     @property
     def front(self) -> T:
