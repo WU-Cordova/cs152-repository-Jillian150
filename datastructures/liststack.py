@@ -1,200 +1,43 @@
-from __future__ import annotations
-from dataclasses import dataclass
-from typing import Optional, Sequence, Iterator
-from datastructures.ilinkedlist import ILinkedList, T
+import os
+from datastructures.istack import IStack
+from typing import Generic
 
+from datastructures.linkedlist import LinkedList
 
-class LinkedList[T](ILinkedList[T]):
+class ListStack[T](Generic[T], IStack[T]):
 
-    @dataclass
-    class Node:
-        data: T
-        next: Optional[LinkedList.Node] = None
-        previous: Optional[LinkedList.Node] = None
+    def __init__(self, data_type: type) -> None:
+        self._list = LinkedList[T](data_type)
 
-    def __init__(self, data_type: type = object) -> None:
-        self.head: Optional[LinkedList.Node] = None
-        self.tail: Optional[LinkedList.Node] = None
-        self.count: int = 0
-        self.data_type = data_type
-        self.current: Optional[LinkedList.Node] = None  # Iterator tracking
-
-    @staticmethod
-    def from_sequence(sequence: Sequence[T], data_type: type = object) -> LinkedList[T]:
-        ll = LinkedList(data_type)
-        for item in sequence:
-            ll.append(item)
-        return ll
-
-    def append(self, item: T) -> None:
-        self._check_type(item)
-        new_node = LinkedList.Node(item)
-        if self.tail:
-            self.tail.next = new_node
-            new_node.previous = self.tail
-        else:
-            self.head = new_node
-        self.tail = new_node
-        self.count += 1
-
-    def prepend(self, item: T) -> None:
-        self._check_type(item)
-        new_node = LinkedList.Node(item)
-        if self.head:
-            self.head.previous = new_node
-            new_node.next = self.head
-        else:
-            self.tail = new_node
-        self.head = new_node
-        self.count += 1
-
-    def insert_before(self, target: T, item: T) -> None:
-        self._check_type(item)
-        current = self.head
-        while current:
-            if current.data == target:
-                new_node = LinkedList.Node(item, next=current, previous=current.previous)
-                if current.previous:
-                    current.previous.next = new_node
-                else:
-                    self.head = new_node
-                current.previous = new_node
-                self.count += 1
-                return
-            current = current.next
-        raise ValueError(f"Target {target} not found in the list.")
-
-    def insert_after(self, target: T, item: T) -> None:
-        self._check_type(item)
-        current = self.head
-        while current:
-            if current.data == target:
-                new_node = LinkedList.Node(item, previous=current, next=current.next)
-                if current.next:
-                    current.next.previous = new_node
-                else:
-                    self.tail = new_node
-                current.next = new_node
-                self.count += 1
-                return
-            current = current.next
-        raise ValueError(f"Target {target} not found in the list.")
-
-    def remove(self, item: T) -> None:
-        current = self.head
-        while current:
-            if current.data == item:
-                if current.previous:
-                    current.previous.next = current.next
-                else:
-                    self.head = current.next
-                if current.next:
-                    current.next.previous = current.previous
-                else:
-                    self.tail = current.previous
-                self.count -= 1
-                return
-            current = current.next
-        raise ValueError(f"Item {item} not found in the list.")
-
-    def remove_all(self, item: T) -> None:
-        current = self.head
-        while current:
-            if current.data == item:
-                if current.previous:
-                    current.previous.next = current.next
-                else:
-                    self.head = current.next
-                if current.next:
-                    current.next.previous = current.previous
-                else:
-                    self.tail = current.previous
-                self.count -= 1
-            current = current.next
+    def push(self, item: T):
+        self._list.prepend(item)
 
     def pop(self) -> T:
-        if not self.tail:
-            raise IndexError("Pop from empty list")
-        value = self.tail.data
-        if self.tail.previous:
-            self.tail = self.tail.previous
-            self.tail.next = None
-        else:
-            self.head = self.tail = None
-        self.count -= 1
-        return value
+        return self._list.pop_front()
 
-    def pop_front(self) -> T:
-        if not self.head:
-            raise IndexError("Pop from empty list")
-        value = self.head.data
-        if self.head.next:
-            self.head = self.head.next
-            self.head.previous = None
-        else:
-            self.head = self.tail = None
-        self.count -= 1
-        return value
-
-    @property
-    def front(self) -> T:
-        if not self.head:
-            raise IndexError("Front from empty list")
-        return self.head.data
-
-    @property
-    def back(self) -> T:
-        if not self.tail:
-            raise IndexError("Back from empty list")
-        return self.tail.data
+    def peek(self) -> T:
+        return self._list.front
 
     @property
     def empty(self) -> bool:
-        return self.count == 0
+        return self._list.empty
 
-    def __len__(self) -> int:
-        return self.count
-
-    def clear(self) -> None:
-        self.head = self.tail = None
-        self.count = 0
+    def clear(self):
+        self._list.clear()
 
     def __contains__(self, item: T) -> bool:
-        current = self.head
-        while current:
-            if current.data == item:
-                return True
-            current = current.next
-        return False
+        return item in self._list
 
-    def __iter__(self) -> Iterator[T]:
-        self.current = self.head
-        return self
-
-    def __next__(self) -> T:
-        if not self.current:
-            raise StopIteration
-        value = self.current.data
-        self.current = self.current.next
-        return value
-
-    def __reversed__(self) -> Iterator[T]:
-        current = self.tail
-        while current:
-            yield current.data
-            current = current.previous
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, LinkedList):
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ListStack):
             return False
-        return list(self) == list(other)
+        return self._list == other._list
+
+    def __len__(self) -> int:
+        return len(self._list)
 
     def __str__(self) -> str:
-        return f"[{', '.join(map(str, self))}]"
+        return str(self._list)
 
     def __repr__(self) -> str:
-        return f"LinkedList({', '.join(map(str, self))}) Count: {self.count}"
-
-    def _check_type(self, item: T) -> None:
-        if not isinstance(item, self.data_type):
-            raise TypeError(f"Item {item} must be of type {self.data_type}")
+        return f"ListStack({repr(self._list)})"
