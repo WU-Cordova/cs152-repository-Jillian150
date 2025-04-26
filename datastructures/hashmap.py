@@ -56,7 +56,7 @@ class HashMap(Generic[KT, VT]):
             if node.key == key:
                 node.value = value
                 return
-        bucket.append(key, value)
+        bucket.append((key, value))  # Updated to pass tuple instead of separate args
         self.size += 1
         self._resize()
 
