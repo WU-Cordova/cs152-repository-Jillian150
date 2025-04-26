@@ -5,7 +5,13 @@ import hashlib
 
 from datastructures.linkedlist import LinkedList
 
-class HashMap:
+from typing import Generic, TypeVar
+
+KT = TypeVar("KT")  # Key type
+VT = TypeVar("VT")  # Value type
+
+class HashMap(Generic[KT, VT]):
+
     def __init__(self, number_of_buckets=7, load_factor=0.75, custom_hash_function: Optional[Callable[[int], int]] = None) -> None:
         self.number_of_buckets = number_of_buckets
         self.load_factor = load_factor
