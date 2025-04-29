@@ -1,10 +1,11 @@
 
+from datastructures.bag import Bag
 
 def main():
-    
-    print("Hello, World!")
 
+    print("Hello, World")
 
+    bag = Bag()
+    bag.add('apple')
 
-if __name__ == '__main__':
-    main()
+    print(bag.count('apple'))
